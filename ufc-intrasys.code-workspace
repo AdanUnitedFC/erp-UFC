@@ -1,0 +1,26 @@
+{
+  "folders": [
+    { "path": "backend" },
+    { "path": "frontend" }
+  ],
+  "settings": {
+    "terminal.integrated.defaultProfile.osx": "zsh"
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Backend",
+        "type": "shell",
+        "command": "cd backend && source venv/bin/activate && uvicorn app.main:app --reload",
+        "problemMatcher": []
+      },
+      {
+        "label": "Frontend",
+        "type": "shell",
+        "command": "cd frontend && npm run dev",
+        "problemMatcher": []
+      }
+    ]
+  }
+}
