@@ -19,6 +19,18 @@ ERP para forwarding. Fullstack en FastAPI + React + SQLite.
    subida de archivos, importaciones, exportaciones y el historial.
  - Las tablas de datos utilizan DataTables con filtros por columna.
 
+## Instalación
+
+1. Crea y activa un entorno virtual:
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+2. Instala las dependencias del backend:
+   ```bash
+   pip install -r backend/requirements.txt
+   ```
+
 ## Scripts
 
 - Levantar backend:
