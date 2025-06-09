@@ -1,11 +1,309 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>UFC Intrasys</title>
-  </head>
-  <body>
-    <h1>Frontend UFC Intrasys</h1>
-    <p>React + Vite estará aquí</p>
-  </body>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>UFC Intrasys</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <style>
+    body { padding-top: 40px; }
+    #upload-card { max-width: 500px; }
+    .module-section { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <section class="section">
+    <div class="container">
+      <h1 class="title has-text-centered">UFC Intrasys</h1>
+
+      <div class="columns">
+        <aside class="column is-one-quarter">
+          <nav class="menu">
+            <p class="menu-label">Módulos</p>
+            <ul class="menu-list">
+              <li><a href="#" class="is-active" data-module="subir">Subir Archivo</a></li>
+              <li><a href="#" data-module="importaciones">Importaciones</a></li>
+              <li><a href="#" data-module="exportaciones">Exportaciones</a></li>
+              <li><a href="#" data-module="historial">Historial</a></li>
+            </ul>
+          </nav>
+        </aside>
+
+        <div class="column" id="module-content">
+          <div id="subir" class="module-section">
+            <div class="box" id="upload-card">
+              <h2 class="subtitle">Subir Archivo Excel</h2>
+              <div class="field">
+                <label class="label">Tipo de archivo</label>
+                <div class="control">
+                  <div class="select is-fullwidth">
+                    <select id="tipo">
+                      <option value="importacion">Importación</option>
+                      <option value="exportacion">Exportación</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="label">Archivo Excel</label>
+                <div class="file has-name is-fullwidth">
+                  <label class="file-label">
+                    <input class="file-input" type="file" id="archivo" accept=".xlsx" />
+                    <span class="file-cta">
+                      <span class="file-icon">
+                        <i class="fas fa-upload"></i>
+                      </span>
+                      <span class="file-label">Elegir archivo</span>
+                    </span>
+                    <span class="file-name" id="file-name">No se ha seleccionado archivo</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="field has-text-centered">
+                <button class="button is-link" id="enviar">Subir</button>
+              </div>
+              <p class="has-text-centered" id="mensaje"></p>
+            </div>
+          </div>
+
+          <div id="importaciones" class="module-section" style="display:none;">
+            <h2 class="subtitle">Importaciones</h2>
+            <table id="tabla-importaciones" class="table is-striped is-fullwidth"></table>
+          </div>
+
+          <div id="exportaciones" class="module-section" style="display:none;">
+            <h2 class="subtitle">Exportaciones</h2>
+            <table id="tabla-exportaciones" class="table is-striped is-fullwidth"></table>
+          </div>
+
+          <div id="historial" class="module-section" style="display:none;">
+            <h2 class="subtitle">Historial</h2>
+            <table id="tabla-historial" class="table is-striped is-fullwidth"></table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
+  <script>
+    const archivoInput = document.getElementById('archivo');
+    const fileName = document.getElementById('file-name');
+    const mensaje = document.getElementById('mensaje');
+
+    archivoInput.addEventListener('change', () => {
+      const files = archivoInput.files;
+      if (files.length > 0) {
+        fileName.textContent = files[0].name;
+      } else {
+        fileName.textContent = 'No se ha seleccionado archivo';
+      }
+    });
+
+    document.getElementById('enviar').addEventListener('click', async () => {
+      const files = archivoInput.files;
+      if (!files.length) {
+        mensaje.textContent = 'Seleccione un archivo.';
+        return;
+      }
+      const tipo = document.getElementById('tipo').value;
+      const endpoint = `/upload/${tipo}`;
+      const formData = new FormData();
+      formData.append('file', files[0]);
+
+      mensaje.textContent = 'Enviando...';
+
+      try {
+        const response = await fetch(endpoint, { method: 'POST', body: formData });
+        if (response.ok) {
+          const data = await response.json();
+          mensaje.textContent = `Cargadas ${data.rows} filas`;
+        } else {
+          const err = await response.json();
+          mensaje.textContent = err.detail || 'Error al subir';
+        }
+      } catch (err) {
+        mensaje.textContent = 'Error de red';
+      }
+    });
+
+    const IMPORTACION_COLS = [
+      {key: 'ordinal', title: 'Ordinal'},
+      {key: 'fecha', title: 'Fecha'},
+      {key: 'documento', title: 'Documento'},
+      {key: 'codigo_sa', title: 'Código SA'},
+      {key: 'pais_origen', title: 'País de Origen'},
+      {key: 'importador', title: 'Importador'},
+      {key: 'ruc', title: 'RUC'},
+      {key: 'direccion_importador', title: 'Dirección'},
+      {key: 'localidad', title: 'Localidad'},
+      {key: 'proveedor', title: 'Proveedor'},
+      {key: 'direccion_proveedor', title: 'Dirección Proveedor'},
+      {key: 'ciudad', title: 'Ciudad'},
+      {key: 'aduana', title: 'Aduana'},
+      {key: 'transporte', title: 'Transporte'},
+      {key: 'usd_cif', title: 'U$S CIF'},
+      {key: 'usd_unitario', title: 'U$S Unitario'},
+      {key: 'kgs_brutos', title: 'Kgs. Brutos'},
+      {key: 'cantidad', title: 'Cantidad'},
+      {key: 'unidad_cantidad', title: 'Unidad'},
+      {key: 'volumen', title: 'Volúmen'},
+      {key: 'unidad_volumen', title: 'Unidad Volúmen'},
+      {key: 'descripcion', title: 'Descripción'},
+    ];
+
+    const EXPORTACION_COLS = [
+      {key: 'ordinal', title: 'Ordinal'},
+      {key: 'fecha', title: 'Fecha'},
+      {key: 'documento', title: 'Documento'},
+      {key: 'codigo_sa', title: 'Código SA'},
+      {key: 'pais_destino', title: 'País de Destino'},
+      {key: 'exportador', title: 'Exportador'},
+      {key: 'ruc', title: 'RUC'},
+      {key: 'direccion_exportador', title: 'Dirección'},
+      {key: 'localidad', title: 'Localidad'},
+      {key: 'comprador', title: 'Comprador'},
+      {key: 'direccion_comprador', title: 'Dirección Comprador'},
+      {key: 'ciudad', title: 'Ciudad'},
+      {key: 'aduana', title: 'Aduana'},
+      {key: 'transporte', title: 'Transporte'},
+      {key: 'usd_fob', title: 'U$S FOB'},
+      {key: 'usd_unitario', title: 'U$S Unitario'},
+      {key: 'kgs_brutos', title: 'Kgs. Brutos'},
+      {key: 'cantidad', title: 'Cantidad'},
+      {key: 'unidad_cantidad', title: 'Unidad'},
+      {key: 'volumen', title: 'Volúmen'},
+      {key: 'unidad_volumen', title: 'Unidad Volúmen'},
+      {key: 'descripcion', title: 'Descripción'},
+    ];
+
+    const HIST_COLS = [
+      {key: 'id', title: 'ID'},
+      {key: 'filename', title: 'Archivo'},
+      {key: 'tipo', title: 'Tipo'},
+      {key: 'uploaded_at', title: 'Fecha'},
+      {key: 'accion', title: 'Acción'}
+    ];
+
+    function createTable(selector, data, cols) {
+      const table = document.querySelector(selector);
+      const thead = document.createElement('thead');
+      const row = document.createElement('tr');
+      const filterRow = document.createElement('tr');
+      cols.forEach(col => {
+        const th = document.createElement('th');
+        th.textContent = col.title;
+        row.appendChild(th);
+
+        const thFilter = document.createElement('th');
+        thFilter.innerHTML = '<input class="input is-small" type="text" placeholder="Filtrar">';
+        filterRow.appendChild(thFilter);
+      });
+      thead.appendChild(row);
+      thead.appendChild(filterRow);
+      table.appendChild(thead);
+      const tbody = document.createElement('tbody');
+      table.appendChild(tbody);
+
+      const dt = $(table).DataTable({
+        data: data,
+        columns: cols.map(c => ({data: c.key})),
+        orderCellsTop: true,
+        fixedHeader: true,
+        initComplete: function() {
+          const api = this.api();
+          api.columns().eq(0).each(function(colIdx) {
+            const cell = $('thead tr:eq(1) th:eq(' + colIdx + ') input', api.table().header());
+            cell.on('keyup change', function() {
+              api.column(colIdx).search(this.value).draw();
+            });
+          });
+        }
+      });
+    }
+
+    function createHistoryTable(selector, data) {
+      const table = document.querySelector(selector);
+      const thead = document.createElement('thead');
+      const row = document.createElement('tr');
+      HIST_COLS.forEach(col => {
+        const th = document.createElement('th');
+        th.textContent = col.title;
+        row.appendChild(th);
+      });
+      thead.appendChild(row);
+      table.appendChild(thead);
+      const tbody = document.createElement('tbody');
+      table.appendChild(tbody);
+
+      const dt = $(table).DataTable({
+        data: data,
+        columns: [
+          {data: 'id'},
+          {data: 'filename'},
+          {data: 'tipo'},
+          {data: 'uploaded_at'},
+          {
+            data: null,
+            render: function(_data, _type, row) {
+              return `<button class="button is-small is-danger" data-id="${row.id}">Borrar</button>`;
+            }
+          }
+        ]
+      });
+
+      $('#'+table.id+' tbody').on('click', 'button', async function() {
+        const id = this.getAttribute('data-id');
+        if (!confirm('¿Eliminar archivo?')) return;
+        const res = await fetch(`/history/${id}`, {method: 'DELETE'});
+        if (res.ok) {
+          dt.row($(this).parents('tr')).remove().draw();
+        }
+      });
+    }
+
+    function showModule(name) {
+      document.querySelectorAll('.menu-list a[data-module]').forEach(a => {
+        if (a.dataset.module === name) {
+          a.classList.add('is-active');
+        } else {
+          a.classList.remove('is-active');
+        }
+      });
+      ['subir','importaciones','exportaciones','historial'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = id === name ? '' : 'none';
+      });
+    }
+
+    document.querySelectorAll('.menu-list a[data-module]').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        showModule(a.dataset.module);
+      });
+    });
+    showModule('subir');
+
+    async function loadTables() {
+      const [impRes, expRes, histRes] = await Promise.all([
+        fetch('/data/importaciones'),
+        fetch('/data/exportaciones'),
+        fetch('/history/')
+      ]);
+      const importaciones = await impRes.json();
+      const exportaciones = await expRes.json();
+      const historial = await histRes.json();
+      createTable('#tabla-importaciones', importaciones, IMPORTACION_COLS);
+      createTable('#tabla-exportaciones', exportaciones, EXPORTACION_COLS);
+      createHistoryTable('#tabla-historial', historial);
+    }
+
+    loadTables();
+  </script>
+</body>
 </html>
